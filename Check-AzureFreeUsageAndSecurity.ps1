@@ -95,16 +95,16 @@ foreach ($sub in $subscriptions) {
         }
     }
 
-    # Cosmos DB Accounts (with resource group extraction)
-    $cosmosDbs = Get-AzCosmosDBAccount
+    # Cosmos DB Accounts - Enumerate by resource group to avoid prompts
+$resourceGroups = Get-AzResourceGroup
+foreach ($rg in $resourceGroups) {
+    $cosmosDbs = Get-AzCosmosDBAccount -ResourceGroupName $rg.ResourceGroupName -ErrorAction SilentlyContinue
     foreach ($db in $cosmosDbs) {
-        $resourceGroup = ($db.Id -split "/")[4]  # Extract resource group from full ID
-
         $isFree = $db.EnableFreeTier
         $publicNetworkAccess = $db.PublicNetworkAccess -ne "Disabled"
         $ipRules = $db.IpRules
         $privateEndpoints = $db.VirtualNetworkRules.Count -gt 0
-        $tlsVersionSecure = $true  # Placeholder - no direct check
+        $tlsVersionSecure = $true  # Placeholder — no exposed property yet
 
         $securityIssues = @()
         if ($publicNetworkAccess -and $ipRules.Count -eq 0) { $securityIssues += "Open to Internet" }
@@ -123,6 +123,7 @@ foreach ($sub in $subscriptions) {
             EstimatedCostUSD = ""
         }
     }
+}
 
     # Function Apps
     $funcApps = Get-AzFunctionApp
