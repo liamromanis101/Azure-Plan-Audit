@@ -176,6 +176,6 @@ foreach ($rg in $resourceGroups) {
 # Output to terminal and CSV
 $results | Format-Table -AutoSize
 
-$csvPath = "$env:USERPROFILE\Desktop\Azure_FreeTier_Security_Report.csv"
+$csvPath = "Azure_FreeTier_Security_Report.csv"
 $results | Export-Csv -Path $csvPath -NoTypeInformation
 Write-Host "`nReport saved to: $csvPath" -ForegroundColor Green
