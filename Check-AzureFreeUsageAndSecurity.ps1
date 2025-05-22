@@ -162,10 +162,10 @@ foreach ($rg in $resourceGroups) {
         }
     }
 
-# Cost Estimation (without -SubscriptionId)
-$startDate = (Get-Date).ToString("yyyy-MM-01")
-$endDate = (Get-Date).AddMonths(1).ToString("yyyy-MM-01")
-$usageDetails = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate -ErrorAction SilentlyContinue
+    # Cost Estimation (without -SubscriptionId)
+    $startDate = (Get-Date).ToString("yyyy-MM-01")
+    $endDate = (Get-Date).AddMonths(1).ToString("yyyy-MM-01")
+    $usageDetails = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate -ErrorAction SilentlyContinue
 
     foreach ($r in $results | Where-Object { $_.Subscription -eq $sub.Name }) {
         $match = $usageDetails | Where-Object { $_.InstanceName -eq $r.ResourceName }
