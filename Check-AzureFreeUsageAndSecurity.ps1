@@ -1,15 +1,14 @@
-# Prerequisites: Az PowerShell Module
-# Run: Install-Module Az -Scope CurrentUser -Force
+# Requires: Az PowerShell Module
+# Install with: Install-Module -Name Az -Scope CurrentUser -Force
 
-# Define thresholds and SKUs
+# Define free-tier thresholds
 $freeTierSkus = @("F1", "F0", "Basic", "Shared")
 $freeUsageLimits = @{
-    "Storage" = 5 * 1024  # MB
-    "FunctionApp" = 1000000  # executions
-    "CosmosDB" = 400  # RU/s
+    "Storage"     = 5 * 1024     # 5GB = 5120MB
+    "FunctionApp" = 1000000      # 1 million executions
+    "CosmosDB"    = 400          # RU/s
 }
 
-# Output
 $results = @()
 
 # Login
@@ -21,9 +20,7 @@ foreach ($sub in $subscriptions) {
     Set-AzContext -SubscriptionId $sub.Id | Out-Null
     Write-Host "Scanning subscription: $($sub.Name)" -ForegroundColor Cyan
 
-    ##########################
     # App Services
-    ##########################
     $apps = Get-AzWebApp
     foreach ($app in $apps) {
         $sku = ($app.Sku).Tier
@@ -36,8 +33,8 @@ foreach ($sub in $subscriptions) {
         $diagnosticsEnabled = $diag -ne $null -and $diag.Enabled
 
         $securityIssues = @()
-        if (-not $httpsOnly) { $securityIssues += "HTTPS Disabled" }
-        if (-not $identityEnabled) { $securityIssues += "Managed Identity Disabled" }
+        if (-not $httpsOnly)        { $securityIssues += "HTTPS Disabled" }
+        if (-not $identityEnabled)  { $securityIssues += "Managed Identity Disabled" }
         if (-not $diagnosticsEnabled) { $securityIssues += "Diagnostics Not Enabled" }
 
         $results += [PSCustomObject]@{
@@ -54,9 +51,7 @@ foreach ($sub in $subscriptions) {
         }
     }
 
-    ##########################
     # Storage Accounts
-    ##########################
     $storages = Get-AzStorageAccount
     foreach ($sa in $storages) {
         $context = $sa.Context
@@ -82,7 +77,7 @@ foreach ($sub in $subscriptions) {
         $tlsVersionSecure = $sa.MinimumTlsVersion -ge "TLS1_2"
 
         $securityIssues = @()
-        if ($publicAccess) { $securityIssues += "Public Containers: $($publicContainers -join ", ")" }
+        if ($publicAccess)        { $securityIssues += "Public Containers: $($publicContainers -join ", ")" }
         if (-not $firewallEnabled) { $securityIssues += "Firewall Not Configured" }
         if (-not $tlsVersionSecure) { $securityIssues += "TLS < 1.2" }
 
@@ -100,21 +95,20 @@ foreach ($sub in $subscriptions) {
         }
     }
 
-    ##########################
-    # Cosmos DB
-    ##########################
+    # Cosmos DB Accounts (with resource group extraction)
     $cosmosDbs = Get-AzCosmosDBAccount
     foreach ($db in $cosmosDbs) {
+        $resourceGroup = ($db.Id -split "/")[4]  # Extract resource group from full ID
+
         $isFree = $db.EnableFreeTier
         $publicNetworkAccess = $db.PublicNetworkAccess -ne "Disabled"
         $ipRules = $db.IpRules
         $privateEndpoints = $db.VirtualNetworkRules.Count -gt 0
-        $tlsVersionSecure = $true  # Placeholder, no direct TLS version exposed
+        $tlsVersionSecure = $true  # Placeholder - no direct check
 
         $securityIssues = @()
         if ($publicNetworkAccess -and $ipRules.Count -eq 0) { $securityIssues += "Open to Internet" }
         if (-not $privateEndpoints) { $securityIssues += "No Private Endpoint" }
-        if (-not $tlsVersionSecure) { $securityIssues += "TLS Version Unknown or Weak" }
 
         $results += [PSCustomObject]@{
             Subscription     = $sub.Name
@@ -130,9 +124,7 @@ foreach ($sub in $subscriptions) {
         }
     }
 
-    ##########################
     # Function Apps
-    ##########################
     $funcApps = Get-AzFunctionApp
     foreach ($func in $funcApps) {
         $sku = ($func.Sku).Tier
@@ -144,8 +136,8 @@ foreach ($sub in $subscriptions) {
         $diagnosticsEnabled = $diag -ne $null -and $diag.Enabled
 
         $securityIssues = @()
-        if (-not $httpsOnly) { $securityIssues += "HTTPS Disabled" }
-        if (-not $identityEnabled) { $securityIssues += "Managed Identity Disabled" }
+        if (-not $httpsOnly)        { $securityIssues += "HTTPS Disabled" }
+        if (-not $identityEnabled)  { $securityIssues += "Managed Identity Disabled" }
         if (-not $diagnosticsEnabled) { $securityIssues += "Diagnostics Not Enabled" }
 
         $results += [PSCustomObject]@{
@@ -162,12 +154,9 @@ foreach ($sub in $subscriptions) {
         }
     }
 
-    ##########################
-    # Cost Estimates (Optional)
-    ##########################
+    # Cost Estimation
     $startDate = (Get-Date).ToString("yyyy-MM-01")
     $endDate = (Get-Date).AddMonths(1).ToString("yyyy-MM-01")
-
     $usageDetails = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate -SubscriptionId $sub.Id -ErrorAction SilentlyContinue
 
     foreach ($r in $results | Where-Object { $_.Subscription -eq $sub.Name }) {
@@ -176,7 +165,7 @@ foreach ($sub in $subscriptions) {
     }
 }
 
-# Output and export
+# Output to terminal and CSV
 $results | Format-Table -AutoSize
 
 $csvPath = "$env:USERPROFILE\Desktop\Azure_FreeTier_Security_Report.csv"
