@@ -55,7 +55,14 @@ foreach ($sub in $subscriptions) {
     $storages = Get-AzStorageAccount
     foreach ($sa in $storages) {
         $context = $sa.Context
-        $usedBytes = (Get-AzStorageUsage -Context $context | Where-Object {$_.LocalName -eq "Blob"}).CurrentValue
+        # Approximate usage info – may require Storage context with key
+        $usedBytes = 0
+        try {
+            $blobs = Get-AzStorageContainer -Context $context | ForEach-Object {Get-AzStorageBlob -Container $_.Name -Context $context }
+            $usedBytes = ($blobs | Measure-Object -Property Length -Sum).Sum
+        } catch {
+            Write-Host "Could not retrieve blob size for $($sa.StorageAccountName)" -ForegroundColor Yellow
+        }
         $usedMB = $usedBytes / 1MB
         $limitMB = $freeUsageLimits["Storage"]
         $isFree = $freeTierSkus -contains $sa.SkuName
@@ -155,10 +162,10 @@ foreach ($rg in $resourceGroups) {
         }
     }
 
-    # Cost Estimation
-    $startDate = (Get-Date).ToString("yyyy-MM-01")
-    $endDate = (Get-Date).AddMonths(1).ToString("yyyy-MM-01")
-    $usageDetails = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate -SubscriptionId $sub.Id -ErrorAction SilentlyContinue
+# Cost Estimation (without -SubscriptionId)
+$startDate = (Get-Date).ToString("yyyy-MM-01")
+$endDate = (Get-Date).AddMonths(1).ToString("yyyy-MM-01")
+$usageDetails = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate -ErrorAction SilentlyContinue
 
     foreach ($r in $results | Where-Object { $_.Subscription -eq $sub.Name }) {
         $match = $usageDetails | Where-Object { $_.InstanceName -eq $r.ResourceName }
