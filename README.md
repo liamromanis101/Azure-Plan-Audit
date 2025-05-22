@@ -13,6 +13,20 @@ Audits Azure plans to detect 'free tier' usage based on Free Tier SKUs, Free Tie
 | **Limited Security Features**| Some services offer reduced security in free tiers (e.g., no IP filtering, TLS options).        | Medium     |
 | **Shared Credentials**       | Quick prototyping often leads to use of shared or hardcoded secrets in free-tier resources.     | Medium     |
 
+## 🔒 Security Limitations in Azure Free Tier Usage
+
+While Azure Free Tier offerings are a great way to explore services at no cost, they often come with **reduced security capabilities or less secure defaults**. This script identifies and highlights these risks so they can be remediated early.
+
+### ⚠️ Common Security Gaps in Free Tier Resources
+
+| Resource Type     | Security Limitation in Free Tier                                                                 | Potential Risks                                  |
+|-------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| **App Services**   | - `HTTPS Only` not enforced<br>- Managed Identity often disabled<br>- Diagnostics typically off | 🔓 Unencrypted traffic, weak identity, no auditing |
+| **Storage Accounts** | - Public blob containers may be enabled<br>- No firewall rules<br>- TLS version may be < 1.2     | 📂 Public data access, insecure transport, no IP restriction |
+| **Function Apps**   | - Similar to App Services:<br>  - No `HTTPS Only`<br>  - No Identity<br>  - Diagnostics off     | 🐛 Harder to monitor or secure execution paths     |
+| **Cosmos DB**       | - Public network access enabled<br>- No private endpoints<br>- Weak or missing firewall config  | 🌐 Broad access to sensitive data endpoints       |
+
+
 ## ✅ How the Script Confirms Free Tier Usage
 
 | Step                           | Description                                                                                     |
