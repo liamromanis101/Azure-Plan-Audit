@@ -44,10 +44,10 @@ While Azure Free Tier offerings are a great way to explore services at no cost, 
 
 | Step                            | Description                                                                                   |
 |---------------------------------|-----------------------------------------------------------------------------------------------|
-| **1. Clone or Copy Script**     | Save the PowerShell script to your local system (e.g., `Check-FreeTierUsage.ps1`).            |
+| **1. Clone or Copy Script**     | Save the PowerShell script to your local system (e.g., `Check-AzureFreeUsageAndSecurity.ps1`).            |
 | **2. Open PowerShell**          | Run PowerShell as your current user (admin rights not strictly necessary).                   |
 | **3. Install Az Module**        | Run `Install-Module -Name Az -Scope CurrentUser` if you haven't already.                     |
-| **4. Run the Script**           | Execute with: `.\Check-FreeTierUsage.ps1`                                                     |
+| **4. Run the Script**           | Execute with: `.\Check-AzureFreeUsageAndSecurity.ps1`                                                     |
 | **5. Authenticate to Azure**    | You'll be prompted to log in if you're not already authenticated.                            |
 | **6. Review the Report**        | The script will print a table and export a CSV report (`AzureFreeTierSecurityReport.csv`).    |
 
